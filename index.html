@@ -1,119 +1,957 @@
 <!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | VALIENDOMAIZv3</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-  </head>
-  <body>
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=960 height=600></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
-        </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-webgl-logo"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">VALIENDOMAIZv3</div>
-      </div>
-    </div>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Acceso Alquímico -- Valiendo Maíz</title>
+    <!-- Tipografías de Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ==========================================
+           VARIABLES Y CONFIGURACIÓN BASE
+           ========================================== */
+        :root {
+            --cyan-neon: #00f3ff;
+            --pink-neon: #d600ff;
+            --blue-neon: #0066ff;
+            --bg-dark: rgba(8, 9, 13, 0.45); 
+            --border-glow: 0 0 12px rgba(0, 243, 255, 0.35);
+            --font-header: 'Orbitron', sans-serif;
+            --font-mono: 'Share Tech Mono', monospace;
+        }
+
+        * {
+            box-shadow: none;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #050508;
+            color: #ffffff;
+            font-family: var(--font-mono);
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: var(--cyan-neon) #050508;
+        }
+
+        /* Control de desbordamiento global para textos */
+        p, h1, h2, h3, h4, span, a {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        /* Video de Fondo */
+        #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* Capa CRT Scanlines */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05));
+            background-size: 100% 4px, 6px 100%;
+            z-index: -1;
+            opacity: 0.25;
+            pointer-events: none;
+            animation: screen-flicker 0.15s infinite;
+        }
+
+        @keyframes screen-flicker {
+            0% { opacity: 0.23; }
+            50% { opacity: 0.27; }
+            100% { opacity: 0.23; }
+        }
+
+        .random-flicker {
+            animation: global-flicker 1.5s infinite alternate;
+        }
+        @keyframes global-flicker {
+            0%, 95% { opacity: 1; }
+            96% { opacity: 0.92; }
+            97% { opacity: 1; }
+            98% { opacity: 0.95; }
+            99%, 100% { opacity: 1; }
+        }
+
+        /* ==========================================
+           LOGOTIPO FLOTANTE SUPERIOR IZQUIERDO (MINI)
+           ========================================== */
+        .mini-logo-anchor {
+            position: fixed;
+            top: 25px;
+            left: 30px;
+            width: 100px;
+            z-index: 120;
+            opacity: 0;
+            transform: scale(0.8) translateX(-20px);
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            background: transparent;
+            border: none;
+        }
+
+        .mini-logo-anchor img {
+            width: 100%;
+            height: auto;
+            display: block;
+            filter: drop-shadow(0 0 8px rgba(0, 243, 255, 0.6));
+            transition: filter 0.3s ease;
+        }
+
+        .mini-logo-anchor.visible {
+            opacity: 1;
+            transform: scale(1) translateX(0);
+            pointer-events: auto;
+        }
+
+        .mini-logo-anchor:hover img {
+            filter: drop-shadow(0 0 14px var(--pink-neon));
+        }
+
+        /* ==========================================
+           BOTÓN HAMBURGUESA (FIJO SUPERIOR DERECHA)
+           ========================================== */
+        .hamburger-btn {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 30px;
+            height: 22px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            z-index: 130;
+            position: fixed;
+            top: 30px;
+            right: 30px;
+        }
+
+        .hamburger-btn .bar {
+            width: 100%;
+            height: 2px;
+            background-color: var(--cyan-neon);
+            box-shadow: 0 0 5px var(--cyan-neon);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .hamburger-btn.open .bar:nth-child(1) { transform: translateY(10px) rotate(45deg); }
+        .hamburger-btn.open .bar:nth-child(2) { opacity: 0; }
+        .hamburger-btn.open .bar:nth-child(3) { transform: translateY(-10px) rotate(-45deg); }
+
+        /* ==========================================
+           NAVEGACIÓN PRINCIPAL DESKTOP
+           ========================================== */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 25px 30px;
+            background: linear-gradient(to bottom, rgba(5,5,8,0.7), rgba(5,5,8,0));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .nav-container {
+            border: 1px solid var(--cyan-neon);
+            box-shadow: var(--border-glow);
+            border-radius: 12px;
+            background: var(--bg-dark);
+            backdrop-filter: blur(8px); 
+            -webkit-backdrop-filter: blur(8px);
+            padding: 12px 40px;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: #b0c0d0;
+            text-decoration: none;
+            font-family: var(--font-header);
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            transition: color 0.3s, transform 0.2s;
+            padding: 5px 10px;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--cyan-neon);
+            animation: glitch-skew 0.3s infinite;
+        }
+
+        .nav-links a.active {
+            color: var(--cyan-neon);
+            text-shadow: 0 0 8px var(--cyan-neon);
+        }
+        
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 10%;
+            width: 80%;
+            height: 2px;
+            background-color: var(--cyan-neon);
+            box-shadow: 0 0 8px var(--cyan-neon);
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 6px;
+            margin-left: 30px;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .dot.cyan { background-color: #00f3ff; box-shadow: 0 0 6px #00f3ff; }
+        .dot.magenta { background-color: #d600ff; box-shadow: 0 0 6px #d600ff; }
+        .dot.purple { background-color: #9d00ff; box-shadow: 0 0 6px #9d00ff; }
+
+        @keyframes glitch-skew {
+            0% { transform: skew(0deg); }
+            20% { transform: skew(3deg) translate(-1px); }
+            40% { transform: skew(-2deg) translate(1px); }
+            100% { transform: skew(0deg); }
+        }
+
+        /* ==========================================
+           DIAGRAMACIÓN Y CONTENEDORES (MEJORADOS)
+           ========================================== */
+        main {
+            position: relative;
+            width: 100%;
+        }
+
+        section {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 160px 24px 100px 24px; /* Más aire general a las secciones */
+            position: relative;
+        }
+
+        .panel-content {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .panel-content.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .ui-box {
+            border: 1px solid var(--cyan-neon);
+            box-shadow: var(--border-glow);
+            background: var(--bg-dark);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 980px;
+            padding: 50px; /* Más aire interno */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 35px; /* Separación ordenada tipo Grid Vertical nativo */
+        }
+
+        .ui-box-header {
+            font-family: var(--font-header);
+            font-size: 1.15rem;
+            color: var(--cyan-neon);
+            letter-spacing: 3px;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+            padding-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Grid de 2 Columnas Blindado contra Desbordamientos */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 50px; /* Mayor separación entre texto e imagen */
+            align-items: start; /* Alineación limpia al inicio */
+        }
+
+        /* Forzar a los hijos del grid a respetar el ancho asignado */
+        .grid-2col > * {
+            min-width: 0;
+        }
+
+        .sample-img {
+            width: 100%;
+            height: auto;
+            max-height: 360px;
+            object-fit: cover;
+            border: 1px solid rgba(0, 243, 255, 0.25);
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+            display: block;
+        }
+
+        .desc-text {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: #edf5ff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+        }
+
+        /* ==========================================
+           0. SECCIÓN HOME
+           ========================================== */
+        #home {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .logo-main {
+            max-width: 380px;
+            width: 80%;
+            height: auto;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 0 15px rgba(0, 243, 255, 0.45));
+        }
+
+        .welcome-title {
+            font-family: var(--font-header);
+            font-size: 2.6rem;
+            letter-spacing: 6px;
+            text-shadow: 0 0 12px rgba(214, 0, 255, 0.75);
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        /* ==========================================
+           2. SECCIÓN TALLER (CORRECCIÓN DE AIRE Y BOTONES)
+           ========================================== */
+        .sub-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.15);
+            padding-bottom: 25px;
+            margin-bottom: 10px; /* Margen extra controlado que suma al gap del ui-box */
+        }
+
+        .sub-btn {
+            background: transparent;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            color: #a0b0c0;
+            padding: 12px 28px;
+            cursor: pointer;
+            font-family: var(--font-header);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            border-radius: 6px;
+            transition: all 0.25s ease;
+        }
+
+        .sub-btn:hover, .sub-btn.active {
+            background: rgba(0, 243, 255, 0.12);
+            border-color: var(--cyan-neon);
+            color: var(--cyan-neon);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.25);
+        }
+
+        .sub-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+
+        .sub-content.active {
+            display: grid; /* Hereda las propiedades de .grid-2col perfectamente */
+        }
+
+        /* ==========================================
+           3. SECCIÓN DESCARGABLES
+           ========================================== */
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .download-card {
+            border: 1px dashed rgba(0, 243, 255, 0.35);
+            background: rgba(5, 5, 8, 0.3);
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .download-card:hover {
+            background: rgba(214, 0, 255, 0.06);
+            border-style: solid;
+            border-color: var(--pink-neon);
+            box-shadow: 0 0 15px rgba(214, 0, 255, 0.2);
+        }
+
+        .btn-download-placeholder {
+            display: inline-block;
+            margin-top: 20px;
+            background: transparent;
+            border: 1px solid var(--cyan-neon);
+            color: var(--cyan-neon);
+            padding: 10px 22px;
+            font-family: var(--font-header);
+            font-size: 0.8rem;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-download-placeholder:hover {
+            background: var(--cyan-neon);
+            color: #000;
+            box-shadow: 0 0 10px var(--cyan-neon);
+        }
+
+        /* ==========================================
+           4. SECCIÓN CONTACTO
+           ========================================== */
+        .contact-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 25px;
+            margin-top: 15px;
+        }
+
+        .social-item {
+            color: #fff;
+            text-decoration: none;
+            padding: 22px 15px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(5, 5, 8, 0.25);
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .social-item svg {
+            width: 32px;
+            height: 32px;
+            fill: #a0b0c0;
+            transition: all 0.3s;
+        }
+
+        .social-item:hover {
+            border-color: var(--cyan-neon);
+            background: rgba(0, 243, 255, 0.06);
+            box-shadow: var(--border-glow);
+            transform: translateY(-4px);
+        }
+
+        .social-item:hover svg {
+            fill: var(--cyan-neon);
+            transform: scale(1.1);
+        }
+
+        /* ==========================================
+           SISTEMA RESPONSIVO OPTIMIZADO
+           ========================================== */
+        @media (max-width: 900px) {
+            header {
+                background: none;
+                padding: 0;
+                height: 0;
+            }
+
+            .nav-container {
+                border: none;
+                box-shadow: none;
+                background: none;
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+                padding: 0;
+                width: 100%;
+            }
+
+            .window-controls {
+                display: none;
+            }
+
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 280px;
+                height: 100vh;
+                background: rgba(10, 11, 15, 0.96);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-left: 1px solid var(--cyan-neon);
+                box-shadow: -5px 0 25px rgba(0, 243, 255, 0.2);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 15px;
+                padding: 40px 0;
+                transition: right 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+                z-index: 110;
+            }
+
+            .nav-links.open {
+                right: 0;
+            }
+
+            .nav-links a {
+                width: 100%;
+                text-align: center;
+                padding: 18px;
+                font-size: 1.1rem;
+                border-bottom: 1px solid rgba(0, 243, 255, 0.05);
+            }
+
+            .nav-links a:last-child {
+                border-bottom: none;
+            }
+
+            .nav-links a.active::after {
+                left: 0;
+                bottom: 0;
+                width: 5px;
+                height: 100%;
+            }
+
+            section {
+                padding: 130px 16px 70px 16px;
+            }
+
+            .ui-box {
+                padding: 30px 20px;
+                gap: 25px;
+            }
+
+            .ui-box-header {
+                font-size: 0.95rem;
+                padding-bottom: 12px;
+                letter-spacing: 1.5px;
+            }
+
+            /* Rediagramación responsive fluida */
+            .grid-2col {
+                grid-template-columns: 1fr !important;
+                gap: 30px !important;
+            }
+
+            .grid-2col div:nth-child(1) { order: 1; }
+            .grid-2col div:nth-child(2) { order: 2; }
+
+            .sample-img {
+                max-height: 240px;
+                width: 100%;
+            }
+
+            .sub-nav {
+                width: 100%;
+                display: flex;
+                gap: 12px;
+                padding-bottom: 15px;
+            }
+
+            .sub-btn {
+                flex: 1 1 auto;
+                text-align: center;
+                padding: 12px 10px;
+                font-size: 0.8rem;
+                letter-spacing: 1px;
+            }
+
+            .welcome-title {
+                font-size: 1.8rem;
+                letter-spacing: 4px;
+            }
+
+            .mini-logo-anchor {
+                top: 20px;
+                left: 20px;
+                width: 80px;
+            }
+        }
+    </style>
+</head>
+<body class="random-flicker">
+
+    <!-- Video de fondo scrubbable -->
+    <video id="bg-video" preload="auto" muted playsinline loop>
+        <source src="video/background-scrub.mp4" type="video/mp4">
+    </video>
+
+    <!-- Líneas CRT -->
+    <div class="scanlines"></div>
+
+    <!-- Mini Logo Superior Izquierdo -->
+    <a href="#home" class="mini-logo-anchor" id="mini-logo" data-sec="home">
+        <img src="images/logo.png" alt="Portal Inicio">
+    </a>
+
+    <!-- Botón Hamburguesa Independiente -->
+    <button class="hamburger-btn" id="hamburger-trigger" aria-label="Abrir Menú">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </button>
+
+    <!-- Menú Principal -->
+    <header>
+        <nav class="nav-container">
+            <div class="nav-links" id="menu-links">
+                <a href="#home" class="nav-link active" data-sec="home">HOME</a>
+                <a href="#proyecto" class="nav-link" data-sec="proyecto">PROYECTO</a>
+                <a href="#taller" class="nav-link" data-sec="taller">TALLER</a>
+                <a href="#descargables" class="nav-link" data-sec="descargables">DESCARGABLES</a>
+                <a href="#contacto" class="nav-link" data-sec="contacto">CONTACTO</a>
+            </div>
+            <div class="window-controls">
+                <div class="dot cyan"></div>
+                <div class="dot magenta"></div>
+                <div class="dot purple"></div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <!-- 0. SECCIÓN HOME -->
+        <section id="home">
+            <div class="panel-content revealed">
+                <div style="max-width:600px;">
+                    <img src="images/logo.png" alt="Logo Principal" class="logo-main" onerror="this.style.display='none';">
+                    <h1 class="welcome-title">PORTAL ALQUÍMICO</h1>
+                    <p class="desc-text" style="font-family: var(--font-header); letter-spacing: 2px; color: var(--cyan-neon); font-size:0.9rem;">BIENVENIDO AL ARCHIVO GRÁFICO</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 1. SECCIÓN PROYECTO -->
+        <section id="proyecto">
+            <div class="ui-box panel-content">
+                <div class="ui-box-header">
+                    <span>SOBRE EL VIAJE // PROYECTO</span>
+                    <span style="font-size: 0.8rem; color: var(--pink-neon);">CoDe (VΔ)</span>
+                </div>
+                <div class="grid-2col">
+                    <div>
+                        <p class="desc-text">
+                            "Exploración visual entre lo táctil y lo digital. Técnicas mixtas que fusionan serigrafía, collage y procesamiento digital para crear piezas únicas con identidad latinoamericana."
+                        </p>
+                    </div>
+                    <div>
+                        <img src="images/proyecto-muestra.jpg" alt="Gráfica análoga y digital" class="sample-img">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. SECCIÓN TALLER -->
+        <section id="taller">
+            <div class="ui-box panel-content">
+                <div class="ui-box-header">
+                    <span>MÓDULO DE SIMULACIÓN // TALLER</span>
+                    <div class="window-controls" style="display:flex; margin:0;"><div class="dot cyan"></div><div class="dot magenta"></div><div class="dot purple"></div></div>
+                </div>
+                
+                <div class="sub-nav">
+                    <button class="sub-btn active" onclick="switchSubTab(event, 'analogo')">ANÁLOGO side</button>
+                    <button class="sub-btn" onclick="switchSubTab(event, 'digital')">DIGITAL side</button>
+                </div>
+
+                <!-- Sub-sección ANÁLOGO -->
+                <div id="analogo" class="sub-content active grid-2col">
+                    <div>
+                        <p class="desc-text">
+                            Técnicas tradicionales de impresión, grabado y experimentación manual con materiales reciclados y tintas artesanales.
+                        </p>
+                    </div>
+                    <div>
+                        <img src="images/taller-analogo.png" alt="Taller Análogo" class="sample-img">
+                    </div>
+                </div>
+
+                <!-- Sub-sección DIGITAL -->
+                <div id="digital" class="sub-content grid-2col">
+                    <div>
+                        <p class="desc-text">
+                            Diseño generativo, modelado 3D, realidad aumentada y producción audiovisual con herramientas open-source.
+                        </p>
+                    </div>
+                    <div>
+                        <img src="images/taller-digital.png" alt="Taller Digital" class="sample-img">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. SECCIÓN DESCARGABLES -->
+        <section id="descargables">
+            <div class="ui-box panel-content">
+                <div class="ui-box-header">
+                    <span>RECURSOS // DESCARGABLES</span>
+                    <span style="font-size: 0.8rem; color: #b0c0d0;">[ACCESO ABIERTO]</span>
+                </div>
+                <p class="desc-text">Recursos gratuitos para creadores: texturas, brushes, overlays y assets descargables.</p>
+                
+                <div class="download-grid">
+                    <div class="download-card">
+                        <h4 style="font-family: var(--font-header); color: #fff; font-size:1rem;">Permacultura M. v1.2</h4>
+                        <p style="color:#a5b5c5; font-size:0.85rem; margin-top:5px;">PDF de Cultivo Alquímico</p>
+                        <a href="#" class="btn-download-placeholder">DESCARGAR</a>
+                    </div>
+                    <div class="download-card">
+                        <h4 style="font-family: var(--font-header); color: #fff; font-size:1rem;">Cómics Valiendo Maíz</h4>
+                        <p style="color:#a5b5c5; font-size:0.85rem; margin-top:5px;">Vol. I - El Maíz Mutante</p>
+                        <a href="#" class="btn-download-placeholder">DESCARGAR</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. SECCIÓN CONTACTO -->
+        <section id="contacto">
+            <div class="ui-box panel-content">
+                <div class="ui-box-header">
+                    <span>SISTEMA // CONTACTO</span>
+                    <span style="font-size: 0.8rem; color: var(--cyan-neon);">ONLINE</span>
+                </div>
+                
+                <div class="contact-links">
+                    <a href="https://www.instagram.com/rufianex.studio/" target="_blank" class="social-item">
+                        <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+                        <span>Instagram</span>
+                    </a>
+                    <a href="https://najarrox.itch.io/valiendomaiz" target="_blank" class="social-item">
+                        <svg viewBox="0 0 24 24"><path d="M3.387 4.192c-.378.02-.734.22-.924.557l-1.923 3.4c-.456.807-.49 1.832.148 2.502.043.045.105.081.166.113l1.15.597V20.25c0 .963.787 1.75 1.75 1.75h14.5c.963 0 1.75-.787 1.75-1.75V11.36l1.144-.595c.064-.033.128-.07.172-.116.637-.67.604-1.695.148-2.502l-1.923-3.4c-.25-.44-.725-.68-1.217-.605l-14.95.198zm2.867 5.253a1.46 1.46 0 0 1 1.053.447c.3.31.443.722.443 1.133 0 .41-.144.823-.443 1.133a1.46 1.46 0 0 1-2.106 0 1.558 1.558 0 0 1-.443-1.133c0-.41.144-.823.443-1.133a1.46 1.46 0 0 1 1.053-.447zm11.492 0c.394 0 .773.16 1.053.447.3.31.443.722.443 1.133 0 .41-.144.823-.443 1.133a1.46 1.46 0 0 1-2.106 0 1.558 1.558 0 0 1-.443-1.133c0-.41.144-.823.443-1.133a1.46 1.46 0 0 1 1.053-.447zM9.5 14h5v2h-5v-2z"/></svg>
+                        <span>Itch.io</span>
+                    </a>
+                    <a href="https://opensea.io/Rufianex-konLAZER" target="_blank" class="social-item">
+                        <svg viewBox="0 0 24 24"><path d="M2.14 13.1c.14-.3.42-.5.74-.5h2.15c.34 0 .64.2.77.52l1.6 3.86 3.1-7.46c.13-.3.43-.5.76-.5h2.48c.34 0 .64.2.77.52l3.1 7.44 1.6-3.86c.13-.32.43-.52.77-.52h2.15c.32 0 .6.2.74.5l1.62 3.5c.23.5-.13 1.1-.68 1.1h-2.3c-.34 0-.64-.2-.77-.52l-1.07-2.58-3.1 7.46c-.13.3-.43.5-.76.5h-2.48c-.34 0-.64-.2-.77-.52L9.5 13.5l-1.08 2.58c-.13.32-.43.52-.77.52H5.35c-.55 0-.9-.6-.68-1.1l1.62-3.5zM12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"/></svg>
+                        <span>OpenSea</span>
+                    </a>
+                    <a href="https://soundcloud.com/hyza-ruano/sets/smartnochis-tesis" target="_blank" class="social-item">
+                        <svg viewBox="0 0 24 24"><path d="M1 14.25c0-.69.56-1.25 1.25-1.25S3.5 13.56 3.5 14.25v2.5c0 .69-.56 1.25-1.25 1.25S1 17.44 1 16.75v-2.5zm3.5-2.5c0-.69.56-1.25 1.25-1.25s1.25.56 1.25 1.25v5c0 .69-.56 1.25-1.25 1.25S4.5 17.44 4.5 16.75v-5zm3.5-1.25c0-.69.56-1.25 1.25-1.25s1.25.56 1.25 1.25v6.25c0 .69-.56 1.25-1.25 1.25S8 18.19 8 17.5V10.5zm3.5 1.25c0-.69.56-1.25 1.25-1.25s1.25.56 1.25 1.25v5c0 .69-.56 1.25-1.25 1.25S11.5 17.44 11.5 16.75v-5zm3.25-5c.34 0 .67.04.98.11.39-.77 1.19-1.31 2.12-1.31 1.28 0 2.33.98 2.47 2.24C24.8 8.42 25 9.4 25 10.45c0 3.62-2.93 6.55-6.55 6.55H14.75V6.75h.25z"/></svg>
+                        <span>SoundCloud</span>
+                    </a>
+                    <a href="https://www.snapchat.com/@najarro_x" target="_blank" class="social-item">
+                        <svg viewBox="0 0 24 24"><path d="M12 .3c-2.4 0-4.5 1.4-5.3 3.7-.4 1.1-.3 2.5-.3 3.6 0 .5.3.9.5 1.3-.3.4-.6.9-.6 1.5 0 .9.7 1.4 1.4 1.4.2 0 .4 0 .5-.1.2.6.7 1.1 1.4 1.3.1.2.1.4.1.5 0 1.2-1.8 1.9-3.5 2.5-.8.3-1.6.6-2.1 1.1-.8.8-.9 1.9-.4 2.8.4.7 1.2 1.1 2.2 1.1 2.3 0 4.8-.5 6.1-.9 1.3.4 3.8.9 6.1.9 1 0 1.8-.4 2.2-1.1.5-.9.4-2-.4-2.8-.5-.5-1.3-.8-2.1-1.1-1.7-.6-3.5-1.3-3.5-2.5 0-.1 0-.3.1-.5.7-.2 1.2-.7 1.4-1.3.1.1.3.1.5.1.7 0 1.4-.5 1.4-1.4 0-.6-.3-1.1-.6-1.5.2-.4.5-.8.5-1.3 0-1.1.1-2.5-.3-3.6C16.5 1.7 14.4.3 12 .3z"/></svg>
+                        <span>Snapchat</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ==========================================
+       LÓGICA JAVASCRIPT
+       ========================================== -->
     <script>
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
-      var warningBanner = document.querySelector("#unity-warning");
+        const video = document.getElementById('bg-video');
+        const videoDuration = 13.0;
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
-      }
+        const sectionTimeRanges = {
+            'home': 0.0,
+            'proyecto': 4.3,
+            'taller': 8.6,
+            'descargables': 10.8,
+            'contacto': 13.0
+        };
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/__JUEGO.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/__JUEGO.data",
-        frameworkUrl: buildUrl + "/__JUEGO.framework.js",
-        codeUrl: buildUrl + "/__JUEGO.wasm",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "VALIENDOMAIZv3",
-        productVersion: "0.1",
-        showBanner: unityShowBanner,
-      };
+        let targetTime = 0;
+        let currentTime = 0;
+        let isManualScrolling = false;
 
-      // By default Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
+        const sections = document.querySelectorAll('section');
+        const allNavLinks = document.querySelectorAll('.nav-link, .mini-logo-anchor');
+        const miniLogo = document.getElementById('mini-logo');
+        const hamburgerBtn = document.getElementById('hamburger-trigger');
+        const menuLinksContainer = document.getElementById('menu-links');
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        container.className = "unity-mobile";
-        canvas.className = "unity-mobile";
-
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
-
-        unityShowBanner('WebGL builds are not supported on mobile devices.');
-      } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-
-        canvas.style.width = "960px";
-        canvas.style.height = "600px";
-      }
-
-      loadingBar.style.display = "block";
-
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-          fullscreenButton.onclick = () => {
-            unityInstance.SetFullscreen(1);
-          };
-        }).catch((message) => {
-          alert(message);
+        // --- MANEJO DEL MENÚ HAMBURGUESA ---
+        hamburgerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hamburgerBtn.classList.toggle('open');
+            menuLinksContainer.classList.toggle('open');
         });
-      };
-      document.body.appendChild(script);
+
+        document.addEventListener('click', (e) => {
+            if (!menuLinksContainer.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+                hamburgerBtn.classList.remove('open');
+                menuLinksContainer.classList.remove('open');
+            }
+        });
+
+        // --- SISTEMA LERP PARA EL VIDEO EN SCROLL ---
+        window.addEventListener('scroll', () => {
+            if (isManualScrolling) return;
+            const scrollTop = window.scrollY;
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollFraction = maxScroll <= 0 ? 0 : scrollTop / maxScroll;
+            targetTime = scrollFraction * videoDuration;
+        });
+
+        function updateVideoFrame() {
+            if (!isManualScrolling) {
+                currentTime += (targetTime - currentTime) * 0.1;
+                if (Math.abs(currentTime - targetTime) < 0.01) currentTime = targetTime;
+                if(video.readyState >= 2) video.currentTime = currentTime;
+            }
+            requestAnimationFrame(updateVideoFrame);
+        }
+        requestAnimationFrame(updateVideoFrame);
+
+        // --- TRANSICIONES MANUALES SUAVES AL SELECCIONAR MENÚS ---
+        allNavLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href');
+                const targetSection = document.querySelector(targetId);
+                const targetSecName = link.getAttribute('data-sec');
+                
+                hamburgerBtn.classList.remove('open');
+                menuLinksContainer.classList.remove('open');
+
+                isManualScrolling = true;
+                
+                const headerBox = targetSection.querySelector('.ui-box-header');
+                if (headerBox) {
+                    headerBox.classList.add('glitch-flash');
+                    setTimeout(() => headerBox.classList.remove('glitch-flash'), 200);
+                }
+
+                let startVideoTime = video.currentTime;
+                let endVideoTime = sectionTimeRanges[targetSecName];
+                
+                let startTime = null;
+                const durationScroll = 2200;
+
+                const startScrollTop = window.scrollY;
+                const targetScrollTop = targetSection.offsetTop;
+
+                function animateScrollAndVideo(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const elapsed = timestamp - startTime;
+                    const progress = Math.min(elapsed / durationScroll, 1);
+
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+                    window.scrollTo(0, startScrollTop + (targetScrollTop - startScrollTop) * easeProgress);
+                    
+                    const currentFrame = startVideoTime + (endVideoTime - startVideoTime) * easeProgress;
+                    if(video.readyState >= 2) video.currentTime = currentFrame;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animateScrollAndVideo);
+                    } else {
+                        currentTime = endVideoTime;
+                        targetTime = endVideoTime;
+                        isManualScrolling = false;
+                        updateActiveElements(targetSecName);
+                    }
+                }
+                requestAnimationFrame(animateScrollAndVideo);
+            });
+        });
+
+        function updateActiveElements(activeSectionId) {
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.getAttribute('data-sec') === activeSectionId) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+
+            if (activeSectionId === 'home') {
+                miniLogo.classList.remove('visible');
+            } else {
+                miniLogo.classList.add('visible');
+            }
+        }
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '-30% 0px -35% 0px',
+            threshold: 0
+        };
+
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const secId = entry.target.getAttribute('id');
+                    if (!isManualScrolling) {
+                        updateActiveElements(secId);
+                    }
+                    const content = entry.target.querySelector('.panel-content');
+                    if (content) content.classList.add('revealed');
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(sec => sectionObserver.observe(sec));
+
+        // --- MANEJO DE PESTAÑAS INTERNAS (TALLERES) ---
+        function switchSubTab(event, tabId) {
+            const uiBox = event.target.closest('.ui-box');
+            uiBox.querySelectorAll('.sub-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const contents = uiBox.querySelectorAll('.sub-content');
+            contents.forEach(content => {
+                content.style.opacity = '0';
+                setTimeout(() => {
+                    content.classList.remove('active');
+                    if (content.getAttribute('id') === tabId) {
+                        content.classList.add('active');
+                        let reflow = content.offsetHeight; 
+                        content.style.opacity = '1';
+                    }
+                }, 200);
+            });
+        }
     </script>
-  </body>
+</body>
 </html>
